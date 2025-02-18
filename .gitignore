@@ -1,0 +1,43 @@
+# Dependencias vendidas
+/vendor/
+
+# Archivos de compilación
+*.exe
+*.exe~
+*.out
+*.test
+*.bak
+
+# Archivos de editor
+*.swp
+*.swo
+.idea/
+.vscode/
+
+# Archivos de configuración de Go
+*.log
+
+# Archivos específicos de Go Modules
+go.sum
+
+# Archivos generados por herramientas de desarrollo
+.DS_Store
+Thumbs.db
+
+# Archivos de compilación del sistema (Windows)
+*.dll
+*.pdb
+*.obj
+*.lib
+*.so
+*.dylib
+
+# Archivos de configuración de Go
+.gopkg-lock
+.gopkg.toml
+
+# Directorios de caché de Go
+/cache/
+
+# Ignorar archivo compilado
+/out
