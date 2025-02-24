@@ -12,5 +12,6 @@ func main() {
 		Handler: sv,
 	}
 
+	sv.Handle("/", http.FileServer(http.Dir(".")))
 	svStruct.ListenAndServe()
 }
