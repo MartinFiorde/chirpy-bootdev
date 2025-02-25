@@ -32,11 +32,11 @@ func main() {
 	sv.Handle("/app/", apiCfg.middlewareMetricsInc(http.StripPrefix("/app", http.FileServer(http.Dir(".")))))
 
 	// explorer path to healthzCustomHandler - http://localhost:8080/healthz
-	sv.HandleFunc("GET /healthz", healthzCustomHandler)
+	sv.HandleFunc("GET /api/healthz", healthzCustomHandler)
 
 	// explorer paths to metrics and reset - http://localhost:8080/metrics + http://localhost:8080/reset
-	sv.HandleFunc("GET /metrics", apiCfg.metricsCustomHandler)
-	sv.HandleFunc("POST /reset", apiCfg.resetCustomHandler)
+	sv.HandleFunc("GET /api/metrics", apiCfg.metricsCustomHandler)
+	sv.HandleFunc("POST /api/reset", apiCfg.resetCustomHandler)
 
 	// CustomHandler to avoid 404 on automatic favicon.ico web browsers request
 	sv.HandleFunc("/favicon.ico", faviconCustomHandler)
