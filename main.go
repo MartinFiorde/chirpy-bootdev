@@ -25,12 +25,18 @@ func main() {
 		Handler: sv,
 	}
 
+	apiCfg := apiConfig{}
+
 	// explorer path to index.html - http://localhost:8080/
 	// explorer path to assets/logo.png - http://localhost:8080/assets/logo.png
-	sv.Handle("/app/", http.StripPrefix("/app", http.FileServer(http.Dir("."))))
+	sv.Handle("/app/", apiCfg.middlewareMetricsInc(http.StripPrefix("/app", http.FileServer(http.Dir(".")))))
 
 	// explorer path to healthzCustomHandler - http://localhost:8080/healthz
 	sv.HandleFunc("/healthz", healthzCustomHandler)
+
+	// explorer paths to metrics and reset - http://localhost:8080/metrics + http://localhost:8080/reset
+	sv.HandleFunc("/metrics", apiCfg.metricsCustomHandler)
+	sv.HandleFunc("/reset", apiCfg.resetCustomHandler)
 
 	// CustomHandler to avoid 404 on automatic favicon.ico web browsers request
 	sv.HandleFunc("/favicon.ico", faviconCustomHandler)
