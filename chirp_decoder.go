@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"strings"
 )
 
 type Parameters struct {
@@ -13,6 +14,7 @@ type Parameters struct {
 type Response struct {
 	Error string `json:"error,omitempty"`
 	Valid bool   `json:"valid,omitempty"`
+	CleanedBody string `json:"cleaned_body,omitempty"`
 }
 
 func decodeHandler(w http.ResponseWriter, r *http.Request) {
@@ -27,7 +29,7 @@ func decodeHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	respondJSON(w, http.StatusOK, Response{Valid: true})
+	respondJSON(w, http.StatusOK, Response{Valid: true, CleanedBody: censorProfanity(params.Body)})
 }
 
 // decodeRequestBody decodes the JSON body from the request.
@@ -54,4 +56,21 @@ func respondJSON(w http.ResponseWriter, status int, payload Response) {
 	}
 
 	w.Write(data)
+}
+
+func censorProfanity(s string) string {
+	profaneWords := map[string]struct{}{
+		"kerfuffle": {},
+		"sharbert":  {},
+		"fornax":    {},
+	}
+
+	words := strings.Fields(s) // más eficiente que Split(s, " ")
+	for i, word := range words {
+		lowerWord := strings.ToLower(word)
+		if _, found := profaneWords[lowerWord]; found {
+			words[i] = "****"
+		}
+	}
+	return strings.Join(words, " ")
 }
