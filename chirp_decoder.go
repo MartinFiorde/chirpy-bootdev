@@ -6,67 +6,52 @@ import (
 	"net/http"
 )
 
-func decodeHandler(w http.ResponseWriter, r *http.Request){
-    type parameters struct {
-        Body string `json:"body"`
-    }
+type Parameters struct {
+	Body string `json:"body"`
+}
 
-    decoder := json.NewDecoder(r.Body)
-    params := parameters{}
-    err := decoder.Decode(&params)
-    
+type Response struct {
+	Error string `json:"error,omitempty"`
+	Valid bool   `json:"valid,omitempty"`
+}
+
+func decodeHandler(w http.ResponseWriter, r *http.Request) {
+	params, err := decodeRequestBody(r)
 	if err != nil {
-		log.Printf("Error decoding parameters: %s", err)
-		type returnVals struct {
-			Error string `json:"error"`
-		}
-		respBody := returnVals{
-			Error: "Something went wrong",
-		}
-		dat, err := json.Marshal(respBody)
-		if err != nil {
-				log.Printf("Error marshalling JSON: %s", err)
-				w.WriteHeader(500)
-				return
-		}
-		w.Header().Add("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(500)
-		w.Write(dat)
+		respondJSON(w, http.StatusInternalServerError, Response{Error: "Something went wrong"})
 		return
-    }
+	}
 
 	if len(params.Body) > 140 {
-		type returnVals struct {
-			Error string `json:"error"`
-		}
-		respBody := returnVals{
-			Error: "Chirp is too long",
-		}
-		dat, err := json.Marshal(respBody)
-		if err != nil {
-				log.Printf("Error marshalling JSON: %s", err)
-				w.WriteHeader(500)
-				return
-		}
-		w.Header().Add("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(400)
-		w.Write(dat)
+		respondJSON(w, http.StatusBadRequest, Response{Error: "Chirp is too long"})
 		return
-    }
-    
-	type returnVals struct {
-		Valid bool `json:"valid"`
 	}
-	respBody := returnVals{
-		Valid: true,
+
+	respondJSON(w, http.StatusOK, Response{Valid: true})
+}
+
+// decodeRequestBody decodes the JSON body from the request.
+func decodeRequestBody(r *http.Request) (*Parameters, error) {
+	var params Parameters
+	decoder := json.NewDecoder(r.Body)
+	if err := decoder.Decode(&params); err != nil {
+		log.Printf("Error decoding parameters: %s", err)
+		return nil, err
 	}
-	dat, err := json.Marshal(respBody)
+	return &params, nil
+}
+
+// respondJSON sends a JSON response with the given status and payload.
+func respondJSON(w http.ResponseWriter, status int, payload Response) {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(status)
+	
+	data, err := json.Marshal(payload)
 	if err != nil {
-			log.Printf("Error marshalling JSON: %s", err)
-			w.WriteHeader(400)
-			return
+		log.Printf("Error marshalling JSON: %s", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
 	}
-	w.Header().Add("Content-Type", "application/json; charset=utf-8")
-	w.WriteHeader(200)
-	w.Write(dat)
+
+	w.Write(data)
 }
