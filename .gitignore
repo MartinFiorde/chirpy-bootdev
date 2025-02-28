@@ -41,3 +41,6 @@ Thumbs.db
 
 # Ignorar archivo compilado
 /out
+
+# Ignorar archivo de logs
+wget-log
