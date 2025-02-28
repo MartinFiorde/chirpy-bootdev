@@ -1,0 +1,49 @@
+# How to generate and execute the http requests
+# https://www.youtube.com/watch?v=RcxvrhQKv8I
+
+###
+
+get http://localhost:8080/admin/metrics
+
+###
+
+get http://localhost:8080/app/
+
+###
+
+post http://localhost:8080/api/validate_chirp
+Content-Type: application/json
+
+{
+  "body": "1",
+  "extra": "this parameter will be ignored, but the overal request should be valid"
+}
+
+###
+
+post http://localhost:8080/api/validate_chirp
+Content-Type: application/json
+
+{
+  "body": "This is an ultra long message I need to share with the world sdfasfasfsadfasdfasdasdassdfasfasfsadfasdfasdasdassdfasfasfsadfasdfasdasdassdfasfasfsadfasdfasdasdassdfasfasfsadfasdfasdasdas"
+}
+
+###
+
+post http://localhost:8080/api/validate_chirp
+Content-Type: application/json
+
+{
+  "body": "This is an opinion I need to share with the world, and a valid request"
+}
+
+###
+
+post http://localhost:8080/api/validate_chirp
+Content-Type: application/json
+
+{
+  "body": 1,
+  "extra": "this request should be rejected for giving a body with number type"
+}
+

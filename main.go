@@ -41,5 +41,8 @@ func main() {
 	// CustomHandler to avoid 404 on automatic favicon.ico web browsers request
 	sv.HandleFunc("/favicon.ico", faviconCustomHandler)
 
+	// CustomHandler to decode and validate chirps
+	sv.HandleFunc("POST /api/validate_chirp", decodeHandler)
+
 	svStruct.ListenAndServe()
 }
