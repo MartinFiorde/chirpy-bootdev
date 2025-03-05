@@ -1,7 +1,14 @@
 package main
 
 import (
+	"database/sql"
+	"log"
 	"net/http"
+	"os"
+
+	"github.com/MartinFiorde/chirpy-bootdev/internal/database"
+	"github.com/joho/godotenv"
+	_ "github.com/lib/pq"
 )
 
 func healthzCustomHandler(w http.ResponseWriter, r *http.Request) {
@@ -17,15 +24,25 @@ func faviconCustomHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
+	godotenv.Load()
+	dbURL := os.Getenv("DB_URL")
+	db, err := sql.Open("postgres", dbURL)
+	if err != nil {
+		log.Printf("Error opening DB: %s", err)
+	}
+	dbQueries := database.New(db)
+
 	// run with "go build -o out && ./out" command in a new terminal to start server
 	// For fast compile and execution you can use "go run .", this wont save a compiled "out" binary file in the root folder
 	sv := http.NewServeMux()
 	svStruct := http.Server{
-		Addr: ":8080",
+		Addr:    ":8080",
 		Handler: sv,
 	}
 
-	apiCfg := apiConfig{}
+	apiCfg := apiConfig{
+		db: dbQueries,
+	}
 
 	// explorer path to index.html - http://localhost:8080/
 	// explorer path to assets/logo.png - http://localhost:8080/assets/logo.png

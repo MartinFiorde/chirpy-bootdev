@@ -41,6 +41,10 @@ Thumbs.db
 
 # Ignorar archivo compilado
 /out
+chirpy-bootdev
 
 # Ignorar archivo de logs
 wget-log
+
+# Ignorar archivo de variables de entorno
+.env
