@@ -47,3 +47,15 @@ Content-Type: application/json
   "extra": "this request should be rejected for giving a body with number type"
 }
 
+###
+
+post http://localhost:8080/api/users
+Content-Type: application/json
+
+{
+  "email": "usera@example.com"
+}
+
+###
+
+post http://localhost:8080/admin/reset

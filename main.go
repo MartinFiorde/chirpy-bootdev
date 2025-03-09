@@ -61,5 +61,10 @@ func main() {
 	// CustomHandler to decode and validate chirps
 	sv.HandleFunc("POST /api/validate_chirp", decodeHandler)
 
+	// CustomHandler to save users
+	sv.HandleFunc("POST /api/users", func(w http.ResponseWriter, r *http.Request) {
+		postUsersHandler(&apiCfg, w, r)
+	})
+
 	svStruct.ListenAndServe()
 }
