@@ -58,4 +58,14 @@ Content-Type: application/json
 
 ###
 
+post http://localhost:8080/api/chirps
+Content-Type: application/json
+
+{
+  "body": "Hello, world!",
+  "user_id": "<GET USED ID FROM LAST REQUEST>"
+}
+
+###
+
 post http://localhost:8080/admin/reset

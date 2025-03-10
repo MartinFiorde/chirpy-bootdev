@@ -47,6 +47,14 @@ func (cfg *apiConfig) resetCustomHandler(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
+	err = cfg.db.DeleteAllChirps(r.Context())
+	if err != nil {
+		w.Header().Add("Content-Type", "text/plain; charset=utf-8")
+		w.WriteHeader(500)
+		w.Write([]byte("db error"))
+		return
+	}
+
 	cfg.fileserverHits.Store(0)
 	w.Header().Add("Content-Type", "text/plain; charset=utf-8")
 	w.WriteHeader(200)

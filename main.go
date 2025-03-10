@@ -58,12 +58,14 @@ func main() {
 	// CustomHandler to avoid 404 on automatic favicon.ico web browsers request
 	sv.HandleFunc("/favicon.ico", faviconCustomHandler)
 
-	// CustomHandler to decode and validate chirps
-	sv.HandleFunc("POST /api/validate_chirp", decodeHandler)
-
 	// CustomHandler to save users
 	sv.HandleFunc("POST /api/users", func(w http.ResponseWriter, r *http.Request) {
 		postUsersHandler(&apiCfg, w, r)
+	})
+
+	// CustomHandler to save chirps
+	sv.HandleFunc("POST /api/chirps", func(w http.ResponseWriter, r *http.Request) {
+		postChirpsHandler(&apiCfg, w, r)
 	})
 
 	svStruct.ListenAndServe()
