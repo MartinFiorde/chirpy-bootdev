@@ -73,5 +73,10 @@ func main() {
 		getChirpsHandler(&apiCfg, w, r)
 	})
 
+	// CustomHandler to get one chirp by id
+	sv.HandleFunc("GET /api/chirps/{id}", func(w http.ResponseWriter, r *http.Request) {
+		getChirpByIdHandler(&apiCfg, w, r)
+	})
+
 	svStruct.ListenAndServe()
 }

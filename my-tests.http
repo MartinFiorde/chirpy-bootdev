@@ -68,4 +68,9 @@ Content-Type: application/json
 
 ###
 
+get http://localhost:8080/api/chirp/701d2f2e-d124-4d16-ab6a-004ceda4404a 
+Content-Type: application/json
+
+###
+
 post http://localhost:8080/admin/reset

@@ -157,3 +157,32 @@ func getChirpsHandler(cfg *apiConfig, w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(chirps)
 }
+
+func getChirpByIdHandler(cfg *apiConfig, w http.ResponseWriter, r *http.Request) {
+	chirpId, err := uuid.Parse(r.PathValue("id"))
+	if err != nil {
+		log.Printf("Error - Invalid UUID format: %v", err)
+		http.Error(w, "Invalid chirp_id format", http.StatusBadRequest) // respondJSON(w, http.StatusBadRequest, Response{Error: "Invalid user_id format"})
+		return
+	}
+
+
+	dbChirp, err := cfg.db.GetChirpById(r.Context(), chirpId)
+	if err != nil {
+		log.Println("DB Error:", err)
+		http.Error(w, "Chirp not found", http.StatusInternalServerError)
+		return
+	}
+
+	chirp := Chirp{
+		ID:        dbChirp.ID,
+		CreatedAt: dbChirp.CreatedAt,
+		UpdatedAt: dbChirp.UpdatedAt,
+		Body:      dbChirp.Body,
+		UserId:    dbChirp.UserID,
+	}
+
+	w.WriteHeader(http.StatusOK)
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(chirp)
+}
