@@ -133,3 +133,27 @@ func ChirpsRespondJSON(w http.ResponseWriter, status int, chirp Chirp) {
 
 	w.Write(data)
 }
+
+func getChirpsHandler(cfg *apiConfig, w http.ResponseWriter, r *http.Request) {
+	dbChirps, err := cfg.db.GetChirps(r.Context())
+	if err != nil {
+		http.Error(w, "Error fetching chirps", http.StatusInternalServerError)
+		log.Println("DB Error:", err)
+		return
+	}
+
+	chirps := make([]Chirp, len(dbChirps))
+	for i, c := range dbChirps {
+		chirps[i] = Chirp{
+			ID:        c.ID,
+			CreatedAt: c.CreatedAt,
+			UpdatedAt: c.UpdatedAt,
+			Body:      c.Body,
+			UserId:    c.UserID,
+		}
+	}
+
+	w.WriteHeader(http.StatusOK)
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(chirps)
+}

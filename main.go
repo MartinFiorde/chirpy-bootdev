@@ -68,5 +68,10 @@ func main() {
 		postChirpsHandler(&apiCfg, w, r)
 	})
 
+	// CustomHandler to get all chirps
+	sv.HandleFunc("GET /api/chirps", func(w http.ResponseWriter, r *http.Request) {
+		getChirpsHandler(&apiCfg, w, r)
+	})
+
 	svStruct.ListenAndServe()
 }
