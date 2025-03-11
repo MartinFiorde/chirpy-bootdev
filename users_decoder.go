@@ -6,11 +6,14 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/MartinFiorde/chirpy-bootdev/internal/auth"
+	"github.com/MartinFiorde/chirpy-bootdev/internal/database"
 	"github.com/google/uuid"
 )
 
 type UsersParameters struct {
-	Email string `json:"email"`
+	Email    string `json:"email"`
+	Password string `json:"password"`
 }
 
 type User struct {
@@ -21,28 +24,38 @@ type User struct {
 }
 
 func postUsersHandler(cfg *apiConfig, w http.ResponseWriter, r *http.Request) {
-	email, err := UsersdecodeRequestBody(r)
+	params, err := UsersdecodeRequestBody(r)
 	if err != nil {
 		respondJSON(w, http.StatusInternalServerError, Response{Error: "Something went wrong"})
 		return
 	}
 
-	user, err := cfg.db.CreateUser(r.Context(), email.Email)
+	hashPass, err := auth.HashPassword(params.Password)
 	if err != nil {
-        log.Printf("Error creating user: %s", err)
-        respondJSON(w, http.StatusInternalServerError, Response{Error: "Database error"})
-        return
-    }
-
-
-	responseUser := User{
-		ID:        user.ID,          
-		CreatedAt: user.CreatedAt,   
-		UpdatedAt: user.UpdatedAt,   
-		Email:     user.Email,       
+		respondJSON(w, http.StatusInternalServerError, Response{Error: "Something went wrong"})
+		return
 	}
 
-	UsersrespondJSON(w, http.StatusCreated, responseUser)
+	dbParams := database.CreateUserParams{
+		Email:          params.Email,
+		HashedPassword: hashPass,
+	}
+
+	dbUser, err := cfg.db.CreateUser(r.Context(), dbParams)
+	if err != nil {
+		log.Printf("Error creating user: %s", err)
+		respondJSON(w, http.StatusInternalServerError, Response{Error: "Database error"})
+		return
+	}
+
+	user := User{
+		ID:        dbUser.ID,
+		CreatedAt: dbUser.CreatedAt,
+		UpdatedAt: dbUser.UpdatedAt,
+		Email:     dbParams.Email,
+	}
+
+	UsersrespondJSON(w, http.StatusCreated, user)
 }
 
 // decodeRequestBody decodes the JSON body from the request.
@@ -69,4 +82,33 @@ func UsersrespondJSON(w http.ResponseWriter, status int, user User) {
 	}
 
 	w.Write(data)
+}
+
+func postLogin(cfg *apiConfig, w http.ResponseWriter, r *http.Request) {
+	params, err := UsersdecodeRequestBody(r)
+	if err != nil {
+		respondJSON(w, http.StatusInternalServerError, Response{Error: "Something went wrong"})
+		return
+	}
+
+	dbUser, err := cfg.db.GetUserByEmail(r.Context(), params.Email)
+	if err != nil {
+		respondJSON(w, http.StatusInternalServerError, Response{Error: "Something went wrong <email missing in db>"})
+		return
+	}
+
+	err = auth.CheckPasswordHash(params.Password, dbUser.HashedPassword)
+	if err != nil {
+		respondJSON(w, http.StatusUnauthorized, Response{Error: "Something went wrong <pass doesnt match>"})
+		return
+	}
+
+	user := User{
+		ID:        dbUser.ID,
+		CreatedAt: dbUser.CreatedAt,
+		UpdatedAt: dbUser.UpdatedAt,
+		Email:     dbUser.Email,
+	}
+
+	UsersrespondJSON(w, http.StatusOK, user)
 }

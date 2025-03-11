@@ -78,5 +78,10 @@ func main() {
 		getChirpByIdHandler(&apiCfg, w, r)
 	})
 
+	// CustomHandler to login
+	sv.HandleFunc("POST /api/login", func(w http.ResponseWriter, r *http.Request) {
+		postLogin(&apiCfg, w, r)
+	})
+
 	svStruct.ListenAndServe()
 }
