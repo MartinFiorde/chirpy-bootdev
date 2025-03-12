@@ -17,9 +17,6 @@
 # Archivos de configuración de Go
 *.log
 
-# Archivos específicos de Go Modules
-go.sum
-
 # Archivos generados por herramientas de desarrollo
 .DS_Store
 Thumbs.db
