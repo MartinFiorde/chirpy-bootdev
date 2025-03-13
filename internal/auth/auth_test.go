@@ -72,36 +72,49 @@ func TestMakeJWT(t *testing.T) {
 	tests := []struct {
 		name    string
 		jwt     string
+		secret  string
 		uuid    uuid.UUID
 		wantErr bool
 	}{
 		{
 			name:    "Correct JWT",
 			jwt:     jwt1,
+			secret:  secretToken,
 			uuid:    uuid1,
 			wantErr: false,
 		},
 		{
 			name:    "Incorrect JWT",
 			jwt:     "invalid jwt",
+			secret:  secretToken,
 			uuid:    uuid1,
 			wantErr: true,
 		},
 		{
 			name:    "JWT doesn't match different uuid",
 			jwt:     jwt2,
+			secret:  secretToken,
+			uuid:    uuid1,
+			wantErr: true,
+		},
+		{
+			name:    "Incorrect secretToken",
+			jwt:     jwt1,
+			secret:  "incorrectToken",
 			uuid:    uuid1,
 			wantErr: true,
 		},
 		{
 			name:    "Empty JWT",
 			jwt:     "",
+			secret:  secretToken,
 			uuid:    uuid1,
 			wantErr: true,
 		},
 		{
 			name:    "Incorrect uuid",
 			jwt:     jwt1,
+			secret:  secretToken,
 			uuid:    uuid2,
 			wantErr: false,
 		},
