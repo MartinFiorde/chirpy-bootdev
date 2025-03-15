@@ -67,64 +67,74 @@ func TestMakeJWT(t *testing.T) {
 	uuid2, _ := uuid.Parse("3d6f5f94-3b4d-4a71-9835-6397d3da9a56")
 	secretToken := "ImSicrit!1234"
 	jwt1, _ := MakeJWT(uuid1, secretToken, 24*time.Hour)
-	jwt2, _ := MakeJWT(uuid1, secretToken, 24*time.Hour)
+	jwt2, _ := MakeJWT(uuid2, secretToken, 24*time.Hour)
 
 	tests := []struct {
-		name    string
-		jwt     string
-		secret  string
-		uuid    uuid.UUID
-		wantErr bool
+		name           string
+		tokenString    string
+		tokenSecret    string
+		expectedUserID uuid.UUID
+		funcErr        bool
+		resultErr      bool
 	}{
 		{
-			name:    "Correct JWT",
-			jwt:     jwt1,
-			secret:  secretToken,
-			uuid:    uuid1,
-			wantErr: false,
+			name:           "Correct JWT",
+			tokenString:    jwt1,
+			tokenSecret:    secretToken,
+			expectedUserID: uuid1,
+			funcErr:        false,
+			resultErr:      false,
 		},
 		{
-			name:    "Incorrect JWT",
-			jwt:     "invalid jwt",
-			secret:  secretToken,
-			uuid:    uuid1,
-			wantErr: true,
+			name:           "Incorrect JWT",
+			tokenString:    "invalid_jwt",
+			tokenSecret:    secretToken,
+			expectedUserID: uuid1,
+			funcErr:        true,
+			resultErr:      true,
 		},
 		{
-			name:    "JWT doesn't match different uuid",
-			jwt:     jwt2,
-			secret:  secretToken,
-			uuid:    uuid1,
-			wantErr: true,
+			name:           "JWT doesn't match different uuid",
+			tokenString:    jwt2,
+			tokenSecret:    secretToken,
+			expectedUserID: uuid1,
+			funcErr:        false,
+			resultErr:      true,
 		},
 		{
-			name:    "Incorrect secretToken",
-			jwt:     jwt1,
-			secret:  "incorrectToken",
-			uuid:    uuid1,
-			wantErr: true,
+			name:           "Incorrect secretToken",
+			tokenString:    jwt1,
+			tokenSecret:    "incorrectToken",
+			expectedUserID: uuid1,
+			funcErr:        true,
+			resultErr:      true,
 		},
 		{
-			name:    "Empty JWT",
-			jwt:     "",
-			secret:  secretToken,
-			uuid:    uuid1,
-			wantErr: true,
+			name:           "Empty JWT",
+			tokenString:    "",
+			tokenSecret:    secretToken,
+			expectedUserID: uuid1,
+			funcErr:        true,
+			resultErr:      true,
 		},
 		{
-			name:    "Incorrect uuid",
-			jwt:     jwt1,
-			secret:  secretToken,
-			uuid:    uuid2,
-			wantErr: false,
+			name:           "Incorrect uuid result",
+			tokenString:    jwt1,
+			tokenSecret:    secretToken,
+			expectedUserID: uuid2,
+			funcErr:        false,
+			resultErr:      true,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			uuid, err := ValidateJWT(tt.jwt, secretToken)
-			if (err != nil) != tt.wantErr && uuid != tt.uuid {
-				t.Errorf("CheckPasswordHash() error = %v, wantErr %v", err, tt.wantErr)
+			resultUserID, err := ValidateJWT(tt.tokenString, tt.tokenSecret)
+			if (err != nil) != tt.funcErr {
+				t.Errorf("ValidateJWT() error = %v, expected funcErr %v", err, tt.funcErr)
+			}
+			if (resultUserID != tt.expectedUserID) != tt.resultErr {
+				t.Errorf("ValidateJWT() resultUserID = %v, expectedUserID %v", resultUserID, tt.expectedUserID)
 			}
 		})
 	}
