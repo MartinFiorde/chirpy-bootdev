@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/MartinFiorde/chirpy-bootdev/internal/auth"
 	"github.com/MartinFiorde/chirpy-bootdev/internal/database"
 	"github.com/google/uuid"
 )
@@ -67,20 +68,36 @@ type Chirp struct {
 }
 
 func postChirpsHandler(cfg *apiConfig, w http.ResponseWriter, r *http.Request) {
-	chirpRequest, err := ChirpsDecodeRequestBody(w, r)
+	userBearerToken, err := auth.GetBearerToken(r.Header)
 	if err != nil {
-		respondJSON(w, http.StatusInternalServerError, Response{Error: "Something went wrong"})
+		log.Printf("Error: %v", err)
+		respondJSON(w, http.StatusInternalServerError, Response{Error: "Something went wrong 1"})
+		return
+	}
+
+	userID, err := auth.ValidateJWT(userBearerToken, cfg.secret)
+	if err != nil {
+		log.Printf("Error: %v", err)
+		respondJSON(w, http.StatusInternalServerError, Response{Error: "Something went wrong 2"})
+		return
+	}
+
+	chirpRequest, err := ChirpsDecodeRequestBody(w, r, userID)
+	if err != nil {
+		log.Printf("Error: %v", err)
+		respondJSON(w, http.StatusInternalServerError, Response{Error: "Something went wrong 3"})
 		return
 	}
 
 	chirp, err := cfg.db.CreateChirps(r.Context(), *chirpRequest)
 	if err != nil {
-		log.Printf("Error creating user: %s", err)
+		log.Printf("Error: %v", err)
 		respondJSON(w, http.StatusInternalServerError, Response{Error: "Database error: "})
 		return
 	}
 
 	if len(chirp.Body) > 140 {
+		log.Printf("Error: Chirp is too long")
 		respondJSON(w, http.StatusBadRequest, Response{Error: "Chirp is too long"})
 		return
 	}
@@ -97,7 +114,7 @@ func postChirpsHandler(cfg *apiConfig, w http.ResponseWriter, r *http.Request) {
 }
 
 // decodeRequestBody decodes the JSON body from the request.
-func ChirpsDecodeRequestBody(w http.ResponseWriter, r *http.Request) (*database.CreateChirpsParams, error) {
+func ChirpsDecodeRequestBody(w http.ResponseWriter, r *http.Request, userID uuid.UUID) (*database.CreateChirpsParams, error) {
 	var chirpJson ChirpParameters
 	decoder := json.NewDecoder(r.Body)
 	if err := decoder.Decode(&chirpJson); err != nil {
@@ -105,16 +122,9 @@ func ChirpsDecodeRequestBody(w http.ResponseWriter, r *http.Request) (*database.
 		return nil, err
 	}
 
-	userUUID, err := uuid.Parse(chirpJson.UserID)
-	if err != nil {
-		log.Printf("Invalid UUID format: %v", err)
-		respondJSON(w, http.StatusBadRequest, Response{Error: "Invalid user_id format"})
-		return nil, err
-	}
-
 	chirp := database.CreateChirpsParams{
 		Body: chirpJson.Body,
-		UserID: userUUID,
+		UserID: userID,
 	}
 	return &chirp, nil
 }

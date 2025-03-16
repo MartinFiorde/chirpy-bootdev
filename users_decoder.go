@@ -14,6 +14,7 @@ import (
 type UsersParameters struct {
 	Email    string `json:"email"`
 	Password string `json:"password"`
+	ExpiresInSeconds int `json:"expires_in_seconds"`
 }
 
 type User struct {
@@ -21,6 +22,7 @@ type User struct {
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 	Email     string    `json:"email"`
+	Token     string    `json:"token"`
 }
 
 func postUsersHandler(cfg *apiConfig, w http.ResponseWriter, r *http.Request) {
@@ -66,6 +68,9 @@ func UsersdecodeRequestBody(r *http.Request) (*UsersParameters, error) {
 		log.Printf("Error decoding parameters: %s", err)
 		return nil, err
 	}
+	if email.ExpiresInSeconds <= 0 || email.ExpiresInSeconds > 3600 {
+		email.ExpiresInSeconds = 3600
+	}
 	return &email, nil
 }
 
@@ -86,6 +91,7 @@ func UsersrespondJSON(w http.ResponseWriter, status int, user User) {
 
 func postLogin(cfg *apiConfig, w http.ResponseWriter, r *http.Request) {
 	params, err := UsersdecodeRequestBody(r)
+	// log.Printf("Seconds: %v", params.ExpiresInSeconds)
 	if err != nil {
 		respondJSON(w, http.StatusInternalServerError, Response{Error: "Something went wrong"})
 		return
@@ -103,11 +109,18 @@ func postLogin(cfg *apiConfig, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	jwt, err := auth.MakeJWT(dbUser.ID, cfg.secret, time.Duration(params.ExpiresInSeconds) * time.Second) 
+	if err != nil {
+		respondJSON(w, http.StatusUnauthorized, Response{Error: "Something went wrong <jwt error>"})
+		return
+	}
+
 	user := User{
 		ID:        dbUser.ID,
 		CreatedAt: dbUser.CreatedAt,
 		UpdatedAt: dbUser.UpdatedAt,
 		Email:     dbUser.Email,
+		Token:     jwt,
 	}
 
 	UsersrespondJSON(w, http.StatusOK, user)

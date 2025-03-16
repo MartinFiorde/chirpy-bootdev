@@ -3,6 +3,8 @@ package auth
 import (
 	"errors"
 	"fmt"
+	"net/http"
+	"strings"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -25,6 +27,7 @@ func CheckPasswordHash(password, hash string) error {
 }
 
 func MakeJWT(userID uuid.UUID, tokenSecret string, expiresIn time.Duration) (string, error) {
+	// log.Printf("Expire time: %v", expiresIn)
 	claims := jwt.RegisteredClaims{
 		Issuer: "Chirpy",
 		IssuedAt: jwt.NewNumericDate(time.Now().UTC()),
@@ -70,3 +73,12 @@ func ValidateJWT(tokenString, tokenSecret string) (uuid.UUID, error) {
 
 	return userId, nil
 }
+
+func GetBearerToken(headers http.Header) (string, error) {
+	// log.Printf("Headers: %v", headers)
+	authHeader := headers.Get("Authorization")
+	if authHeader == "" {
+		return authHeader, errors.New("missing authorization header")
+	}
+	return strings.TrimPrefix(authHeader, "Bearer "), nil
+} 

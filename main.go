@@ -26,6 +26,7 @@ func faviconCustomHandler(w http.ResponseWriter, r *http.Request) {
 func main() {
 	godotenv.Load()
 	dbURL := os.Getenv("DB_URL")
+	secret := os.Getenv("JWT_SECRET")
 	db, err := sql.Open("postgres", dbURL)
 	if err != nil {
 		log.Printf("Error opening DB: %s", err)
@@ -42,6 +43,7 @@ func main() {
 
 	apiCfg := apiConfig{
 		db: dbQueries,
+		secret: secret,
 	}
 
 	// explorer path to index.html - http://localhost:8080/
