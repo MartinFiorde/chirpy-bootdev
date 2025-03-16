@@ -23,6 +23,7 @@ type User struct {
 	UpdatedAt time.Time `json:"updated_at"`
 	Email     string    `json:"email"`
 	Token     string    `json:"token"`
+	RefreshToken     string    `json:"refresh_token"`
 }
 
 func postUsersHandler(cfg *apiConfig, w http.ResponseWriter, r *http.Request) {
@@ -91,7 +92,6 @@ func UsersrespondJSON(w http.ResponseWriter, status int, user User) {
 
 func postLogin(cfg *apiConfig, w http.ResponseWriter, r *http.Request) {
 	params, err := UsersdecodeRequestBody(r)
-	// log.Printf("Seconds: %v", params.ExpiresInSeconds)
 	if err != nil {
 		respondJSON(w, http.StatusInternalServerError, Response{Error: "Something went wrong"})
 		return
@@ -115,13 +115,79 @@ func postLogin(cfg *apiConfig, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	refreshToken, err := auth.MakeRefreshToken()
+	if err != nil {
+		respondJSON(w, http.StatusInternalServerError, Response{Error: "Something went wrong<fail to generate refresh token>"})
+		return
+	}
+
+	refreshTokenDB, err := cfg.db.CreateRefreshToken(r.Context(), 
+	database.CreateRefreshTokenParams{
+		Token: refreshToken,
+		UserID: dbUser.ID,
+	})
+	if err != nil {
+		respondJSON(w, http.StatusInternalServerError, Response{Error: "Something went wrong<fail to save refresh token in db>"})
+		return
+	}
+
 	user := User{
 		ID:        dbUser.ID,
 		CreatedAt: dbUser.CreatedAt,
 		UpdatedAt: dbUser.UpdatedAt,
 		Email:     dbUser.Email,
 		Token:     jwt,
+		RefreshToken: refreshTokenDB.Token,
 	}
 
 	UsersrespondJSON(w, http.StatusOK, user)
+}
+
+func postRefresh(cfg *apiConfig, w http.ResponseWriter, r *http.Request) {
+	userBearerToken, err := auth.GetBearerToken(r.Header)
+	if err != nil {
+		log.Printf("Error: %v", err)
+		respondJSON(w, http.StatusInternalServerError, Response{Error: "Something went wrong 1"})
+		return
+	}
+
+	tokenDB, err:= cfg.db.GetRefreshTokenByToken(r.Context(), userBearerToken)
+	if err != nil || tokenDB.RevokedAt.Valid || tokenDB.ExpiresAt.Before(time.Now()){
+		respondJSON(w, http.StatusUnauthorized, Response{Error: "invalid refresh token"})
+		return
+	}
+
+	jwt, err := auth.MakeJWT2(tokenDB.UserID, cfg.secret)
+	if err != nil {
+		log.Printf("Error: %v", err)
+		respondJSON(w, http.StatusInternalServerError, Response{Error: "Something went wrong 1"})
+		return
+	}
+
+	respondJSON(w, http.StatusOK, Response{Token: jwt})
+}
+
+func postRevoke(cfg *apiConfig, w http.ResponseWriter, r *http.Request) {
+	userBearerToken, err := auth.GetBearerToken(r.Header)
+	if err != nil {
+		log.Printf("Error: %v", err)
+		respondJSON(w, http.StatusInternalServerError, Response{Error: "Something went wrong 4"})
+		return
+	}
+
+	tokenDB, err:= cfg.db.GetRefreshTokenByToken(r.Context(), userBearerToken)
+	if err != nil {
+		respondJSON(w, http.StatusUnauthorized, Response{Error: "invalid refresh token"})
+		return
+	}
+
+	err = cfg.db.RevokeRefreshToken(r.Context(), tokenDB.Token)
+	if err != nil {
+		log.Printf("Error: %v", err)
+		respondJSON(w, http.StatusInternalServerError, Response{Error: "Something went wrong 5"})
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(http.StatusNoContent)
 }

@@ -85,5 +85,15 @@ func main() {
 		postLogin(&apiCfg, w, r)
 	})
 
+	// CustomHandler to login
+	sv.HandleFunc("POST /api/refresh", func(w http.ResponseWriter, r *http.Request) {
+		postRefresh(&apiCfg, w, r)
+	})
+
+	// CustomHandler to login
+	sv.HandleFunc("POST /api/revoke", func(w http.ResponseWriter, r *http.Request) {
+		postRevoke(&apiCfg, w, r)
+	})
+
 	svStruct.ListenAndServe()
 }

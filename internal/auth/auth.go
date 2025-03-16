@@ -1,6 +1,8 @@
 package auth
 
 import (
+	"crypto/rand"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"net/http"
@@ -24,6 +26,12 @@ func HashPassword(password string) (string, error) {
 
 func CheckPasswordHash(password, hash string) error {
 	return bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
+}
+
+func MakeJWT2(userID uuid.UUID, tokenSecret string) (string, error) {
+	time := time.Duration(3600) * time.Second
+	resp, err := MakeJWT(userID, tokenSecret, time)
+	return resp, err
 }
 
 func MakeJWT(userID uuid.UUID, tokenSecret string, expiresIn time.Duration) (string, error) {
@@ -81,4 +89,13 @@ func GetBearerToken(headers http.Header) (string, error) {
 		return authHeader, errors.New("missing authorization header")
 	}
 	return strings.TrimPrefix(authHeader, "Bearer "), nil
-} 
+}
+
+func MakeRefreshToken() (string, error) {
+	bytes := make([]byte, 32)
+	_, err:= rand.Read(bytes)
+	if err != nil {
+		return "", fmt.Errorf("failed to generate refresh token: %w", err)
+	}
+	return hex.EncodeToString(bytes), nil
+}

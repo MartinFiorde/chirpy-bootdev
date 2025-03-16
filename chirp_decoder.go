@@ -20,6 +20,7 @@ type Response struct {
 	Error string `json:"error,omitempty"`
 	Valid bool   `json:"valid,omitempty"`
 	CleanedBody string `json:"cleaned_body,omitempty"`
+	Token string `json:"token,omitempty"`
 }
 
 // respondJSON sends a JSON response with the given status and payload.
@@ -78,7 +79,7 @@ func postChirpsHandler(cfg *apiConfig, w http.ResponseWriter, r *http.Request) {
 	userID, err := auth.ValidateJWT(userBearerToken, cfg.secret)
 	if err != nil {
 		log.Printf("Error: %v", err)
-		respondJSON(w, http.StatusInternalServerError, Response{Error: "Something went wrong 2"})
+		respondJSON(w, http.StatusUnauthorized, Response{Error: "Something went wrong 2"})
 		return
 	}
 
