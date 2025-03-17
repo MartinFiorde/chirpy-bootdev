@@ -105,5 +105,10 @@ func main() {
 		deleteChirpByID(&apiCfg, w, r)
 	})
 
+	// CustomHandler for polka webhoook
+	sv.HandleFunc("POST /api/polka/webhooks", func(w http.ResponseWriter, r *http.Request) {
+		upgradeUserMembership(&apiCfg, w, r)
+	})
+
 	svStruct.ListenAndServe()
 }

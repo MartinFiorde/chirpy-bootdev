@@ -22,6 +22,7 @@ type User struct {
 	CreatedAt    time.Time `json:"created_at"`
 	UpdatedAt    time.Time `json:"updated_at"`
 	Email        string    `json:"email"`
+	IsChirpyRed  bool      `json:"is_chirpy_red"`
 	Token        string    `json:"token,omitempty"`
 	RefreshToken string    `json:"refresh_token,omitempty"`
 }
@@ -56,6 +57,7 @@ func postCreateUserHandler(cfg *apiConfig, w http.ResponseWriter, r *http.Reques
 		CreatedAt: dbUser.CreatedAt,
 		UpdatedAt: dbUser.UpdatedAt,
 		Email:     dbParams.Email,
+		IsChirpyRed: dbUser.IsChirpyRed,
 	}
 
 	UsersrespondJSON(w, http.StatusCreated, user)
@@ -136,6 +138,7 @@ func postLogin(cfg *apiConfig, w http.ResponseWriter, r *http.Request) {
 		CreatedAt:    dbUser.CreatedAt,
 		UpdatedAt:    dbUser.UpdatedAt,
 		Email:        dbUser.Email,
+		IsChirpyRed: dbUser.IsChirpyRed,
 		Token:        jwt,
 		RefreshToken: refreshTokenDB.Token,
 	}
@@ -237,8 +240,35 @@ func putChangePassword(cfg *apiConfig, w http.ResponseWriter, r *http.Request) {
 		CreatedAt: dbUser.CreatedAt,
 		UpdatedAt: dbUser.UpdatedAt,
 		Email:     dbUser.Email,
+		IsChirpyRed: dbUser.IsChirpyRed,
 	}
 
 	UsersrespondJSON(w, http.StatusOK, user)
+}
 
+func upgradeUserMembership(cfg *apiConfig, w http.ResponseWriter, r *http.Request) {
+	var payload struct {
+		Event string `json:"event"`
+		Data  struct {
+			UserID uuid.UUID `json:"user_id"`
+		} `json:"data"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+		http.Error(w, "Invalid JSON", http.StatusBadRequest)
+		return
+	}
+
+	if payload.Event != "user.upgraded" {
+		respondJSON(w, http.StatusNoContent, Response{Error: "invalid event"})
+
+	}
+
+	_, err := cfg.db.UpgradeUserMembership(r.Context(), payload.Data.UserID)
+	if err != nil {
+		log.Printf("Error creating user: %s", err)
+		respondJSON(w, http.StatusNotFound, Response{Error: "Database error"})
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
 }
