@@ -146,11 +146,29 @@ func ChirpsRespondJSON(w http.ResponseWriter, status int, chirp Chirp) {
 }
 
 func getChirpsHandler(cfg *apiConfig, w http.ResponseWriter, r *http.Request) {
-	dbChirps, err := cfg.db.GetChirps(r.Context())
+
+	authorID, err := uuid.Parse(r.URL.Query().Get("author_id"))
 	if err != nil {
-		http.Error(w, "Error fetching chirps", http.StatusInternalServerError)
-		log.Println("DB Error:", err)
+		log.Printf("Error - Invalid UUID format: %v", err)
+		http.Error(w, "Invalid chirp_id format", http.StatusBadRequest) // respondJSON(w, http.StatusBadRequest, Response{Error: "Invalid user_id format"})
 		return
+	}
+
+	var dbChirps []database.Chirp
+	if authorID != uuid.Nil {
+		dbChirps, err = cfg.db.GetChirpsByAuthorID(r.Context(), authorID)
+		if err != nil {
+			http.Error(w, "Error fetching chirps", http.StatusInternalServerError)
+			log.Println("DB Error:", err)
+			return
+		}
+	} else {
+		dbChirps, err = cfg.db.GetChirps(r.Context())
+		if err != nil {
+			http.Error(w, "Error fetching chirps", http.StatusInternalServerError)
+			log.Println("DB Error:", err)
+			return
+		}
 	}
 
 	chirps := make([]Chirp, len(dbChirps))
