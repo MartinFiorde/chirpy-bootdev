@@ -247,6 +247,13 @@ func putChangePassword(cfg *apiConfig, w http.ResponseWriter, r *http.Request) {
 }
 
 func upgradeUserMembership(cfg *apiConfig, w http.ResponseWriter, r *http.Request) {
+	apiKey, err := auth.GetAPIKey(r.Header)
+	if err != nil || apiKey != cfg.polkaKey {
+		log.Printf("Error creating user: %s", err)
+		respondJSON(w, http.StatusUnauthorized, Response{Error: "missing or invalid api key"})
+		return
+	}
+
 	var payload struct {
 		Event string `json:"event"`
 		Data  struct {
@@ -260,10 +267,10 @@ func upgradeUserMembership(cfg *apiConfig, w http.ResponseWriter, r *http.Reques
 
 	if payload.Event != "user.upgraded" {
 		respondJSON(w, http.StatusNoContent, Response{Error: "invalid event"})
-
+		return
 	}
 
-	_, err := cfg.db.UpgradeUserMembership(r.Context(), payload.Data.UserID)
+	_, err = cfg.db.UpgradeUserMembership(r.Context(), payload.Data.UserID)
 	if err != nil {
 		log.Printf("Error creating user: %s", err)
 		respondJSON(w, http.StatusNotFound, Response{Error: "Database error"})

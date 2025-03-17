@@ -37,10 +37,10 @@ func MakeJWT2(userID uuid.UUID, tokenSecret string) (string, error) {
 func MakeJWT(userID uuid.UUID, tokenSecret string, expiresIn time.Duration) (string, error) {
 	// log.Printf("Expire time: %v", expiresIn)
 	claims := jwt.RegisteredClaims{
-		Issuer: "Chirpy",
-		IssuedAt: jwt.NewNumericDate(time.Now().UTC()),
+		Issuer:    "Chirpy",
+		IssuedAt:  jwt.NewNumericDate(time.Now().UTC()),
 		ExpiresAt: jwt.NewNumericDate(time.Now().UTC().Add(expiresIn)),
-		Subject: userID.String(),
+		Subject:   userID.String(),
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
@@ -53,21 +53,21 @@ func MakeJWT(userID uuid.UUID, tokenSecret string, expiresIn time.Duration) (str
 
 func ValidateJWT(tokenString, tokenSecret string) (uuid.UUID, error) {
 	keyFunc := func(token *jwt.Token) (interface{}, error) {
-        if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-            return nil, errors.New("unexpected signing method")
-        }
-        return []byte(tokenSecret), nil
-    }
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, errors.New("unexpected signing method")
+		}
+		return []byte(tokenSecret), nil
+	}
 
-	token, err := jwt.ParseWithClaims(tokenString, &jwt.RegisteredClaims{}, keyFunc) 
+	token, err := jwt.ParseWithClaims(tokenString, &jwt.RegisteredClaims{}, keyFunc)
 	if err != nil {
 		return uuid.UUID{}, err
 	}
 
 	claims, ok := token.Claims.(*jwt.RegisteredClaims)
-    if !ok || !token.Valid {
-        return uuid.UUID{}, errors.New("invalid token")
-    }
+	if !ok || !token.Valid {
+		return uuid.UUID{}, errors.New("invalid token")
+	}
 
 	user, err := claims.GetSubject()
 	if err != nil {
@@ -83,7 +83,6 @@ func ValidateJWT(tokenString, tokenSecret string) (uuid.UUID, error) {
 }
 
 func GetBearerToken(headers http.Header) (string, error) {
-	// log.Printf("Headers: %v", headers)
 	authHeader := headers.Get("Authorization")
 	if authHeader == "" {
 		return authHeader, errors.New("missing authorization header")
@@ -93,9 +92,17 @@ func GetBearerToken(headers http.Header) (string, error) {
 
 func MakeRefreshToken() (string, error) {
 	bytes := make([]byte, 32)
-	_, err:= rand.Read(bytes)
+	_, err := rand.Read(bytes)
 	if err != nil {
 		return "", fmt.Errorf("failed to generate refresh token: %w", err)
 	}
 	return hex.EncodeToString(bytes), nil
+}
+
+func GetAPIKey(headers http.Header) (string, error) {
+	authHeader := headers.Get("Authorization")
+	if authHeader == "" {
+		return authHeader, errors.New("missing authorization header")
+	}
+	return strings.TrimPrefix(authHeader, "ApiKey "), nil
 }

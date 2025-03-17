@@ -27,6 +27,7 @@ func main() {
 	godotenv.Load()
 	dbURL := os.Getenv("DB_URL")
 	secret := os.Getenv("JWT_SECRET")
+	polkaKey := os.Getenv("POLKA_API_KEY")
 	db, err := sql.Open("postgres", dbURL)
 	if err != nil {
 		log.Printf("Error opening DB: %s", err)
@@ -44,6 +45,7 @@ func main() {
 	apiCfg := apiConfig{
 		db:     dbQueries,
 		secret: secret,
+		polkaKey: polkaKey,
 	}
 
 	// explorer path to index.html - http://localhost:8080/
