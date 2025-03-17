@@ -68,7 +68,7 @@ Content-Type: application/json
 
 ###
 
-get http://localhost:8080/api/chirp/701d2f2e-d124-4d16-ab6a-004ceda4404a 
+get http://localhost:8080/api/chirps
 Content-Type: application/json
 
 ###

@@ -23,6 +23,13 @@ FROM chirps
 WHERE user_id = $1
 ORDER BY created_at ASC;
 
+-- name: GetChirpsImproved :many
+-- this query replaces and merges the last 2 queries
+SELECT id, created_at, updated_at, body, user_id
+FROM chirps
+WHERE ($1 = '00000000-0000-0000-0000-000000000000'::uuid OR user_id = $1)
+ORDER BY created_at ASC;
+
 -- name: GetChirpById :one
 SELECT id, created_at, updated_at, body, user_id
 FROM chirps

@@ -149,3 +149,39 @@ func (q *Queries) GetChirpsByAuthorID(ctx context.Context, userID uuid.UUID) ([]
 	}
 	return items, nil
 }
+
+const getChirpsImproved = `-- name: GetChirpsImproved :many
+SELECT id, created_at, updated_at, body, user_id
+FROM chirps
+WHERE ($1 = '00000000-0000-0000-0000-000000000000'::uuid OR user_id = $1)
+ORDER BY created_at ASC
+`
+
+func (q *Queries) GetChirpsImproved(ctx context.Context, dollar_1 interface{}) ([]Chirp, error) {
+	rows, err := q.db.QueryContext(ctx, getChirpsImproved, dollar_1)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Chirp
+	for rows.Next() {
+		var i Chirp
+		if err := rows.Scan(
+			&i.ID,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.Body,
+			&i.UserID,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
