@@ -1,0 +1,12 @@
+# NEVER PUSH SECRET .env DATA TO ANY REPOSITORY
+# THIS IS PUSHED TO REPOSITORY ONLY FOR STUDY AND TRACKING REASONS.
+# To use this proyect as it is, change this file name to .env and move to any commit keeping the .env file untracked
+
+DB_URL="postgres://postgres:postgres@localhost:5432/chirpy?sslmode=disable"
+
+# terminal command to generate a random token: openssl rand -base64 64
+JWT_SECRET="d5+rHIgGVAG6NF3NqHEyy4QaLKgG0ZeOWF/A1FK+imZowpmB08ihbcC/PXbNUjFFCMUZPfKvR68B2PcmTk0pfA=="
+
+POLKA_API_KEY="f271c81ff7084ee5b99a5091b42d486e"
+
+PLATFORM ="dev"
