@@ -100,5 +100,10 @@ func main() {
 		putChangePassword(&apiCfg, w, r)
 	})
 
+	// CustomHandler to delete chirp
+	sv.HandleFunc("DELETE /api/chirps/{id}", func(w http.ResponseWriter, r *http.Request) {
+		deleteChirpByID(&apiCfg, w, r)
+	})
+
 	svStruct.ListenAndServe()
 }

@@ -180,7 +180,7 @@ func getChirpByIdHandler(cfg *apiConfig, w http.ResponseWriter, r *http.Request)
 	dbChirp, err := cfg.db.GetChirpById(r.Context(), chirpId)
 	if err != nil {
 		log.Println("DB Error:", err)
-		http.Error(w, "Chirp not found", http.StatusInternalServerError)
+		http.Error(w, "Chirp not found", http.StatusNotFound)
 		return
 	}
 
@@ -195,4 +195,49 @@ func getChirpByIdHandler(cfg *apiConfig, w http.ResponseWriter, r *http.Request)
 	w.WriteHeader(http.StatusOK)
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(chirp)
+}
+
+func deleteChirpByID(cfg *apiConfig, w http.ResponseWriter, r *http.Request) {
+	chirpId, err := uuid.Parse(r.PathValue("id"))
+	if err != nil {
+		log.Printf("Error - Invalid UUID format: %v", err)
+		http.Error(w, "Invalid chirp_id format", http.StatusBadRequest) // respondJSON(w, http.StatusBadRequest, Response{Error: "Invalid user_id format"})
+		return
+	}
+
+	chirpdb, err := cfg.db.GetChirpById(r.Context(), chirpId)
+	if err != nil {
+		log.Printf("Error - Invalid UUID format: %v", err)
+		respondJSON(w, http.StatusNotFound, Response{Error: "Something went wrong 1"})
+		return
+	}
+
+	userBearerToken, err := auth.GetBearerToken(r.Header)
+	if err != nil {
+		log.Printf("Error: %v", err)
+		respondJSON(w, http.StatusUnauthorized, Response{Error: "Something went wrong 2"})
+		return
+	}
+
+	userID, err := auth.ValidateJWT(userBearerToken, cfg.secret)
+	if err != nil {
+		log.Printf("Error: %v", err)
+		respondJSON(w, http.StatusUnauthorized, Response{Error: "Something went wrong 3"})
+		return
+	}
+
+	if chirpdb.UserID != userID {
+		log.Printf("Error - Invalid UUID format: %v", err)
+		respondJSON(w, http.StatusForbidden, Response{Error: "Something went wrong 4"})
+		return
+	}
+
+	err = cfg.db.DeleteChirpById(r.Context(),chirpId)
+	if err != nil {
+		log.Printf("Error: %v", err)
+		respondJSON(w, http.StatusUnauthorized, Response{Error: "Something went wrong 5"})
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
 }
