@@ -17,17 +17,17 @@ type Parameters struct {
 }
 
 type Response struct {
-	Error string `json:"error,omitempty"`
-	Valid bool   `json:"valid,omitempty"`
+	Error       string `json:"error,omitempty"`
+	Valid       bool   `json:"valid,omitempty"`
 	CleanedBody string `json:"cleaned_body,omitempty"`
-	Token string `json:"token,omitempty"`
+	Token       string `json:"token,omitempty"`
 }
 
 // respondJSON sends a JSON response with the given status and payload.
 func respondJSON(w http.ResponseWriter, status int, payload Response) {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(status)
-	
+
 	data, err := json.Marshal(payload)
 	if err != nil {
 		log.Printf("Error marshalling JSON: %s", err)
@@ -56,7 +56,7 @@ func censorProfanity(s string) string {
 }
 
 type ChirpParameters struct {
-	Body   string    `json:"body"`
+	Body   string `json:"body"`
 	UserID string `json:"user_id"`
 }
 
@@ -124,7 +124,7 @@ func ChirpsDecodeRequestBody(w http.ResponseWriter, r *http.Request, userID uuid
 	}
 
 	chirp := database.CreateChirpsParams{
-		Body: chirpJson.Body,
+		Body:   chirpJson.Body,
 		UserID: userID,
 	}
 	return &chirp, nil
@@ -176,7 +176,6 @@ func getChirpByIdHandler(cfg *apiConfig, w http.ResponseWriter, r *http.Request)
 		http.Error(w, "Invalid chirp_id format", http.StatusBadRequest) // respondJSON(w, http.StatusBadRequest, Response{Error: "Invalid user_id format"})
 		return
 	}
-
 
 	dbChirp, err := cfg.db.GetChirpById(r.Context(), chirpId)
 	if err != nil {

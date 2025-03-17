@@ -12,8 +12,8 @@ import (
 
 type apiConfig struct {
 	fileserverHits atomic.Int32
-	db	*database.Queries
-	secret string
+	db             *database.Queries
+	secret         string
 }
 
 func (cfg *apiConfig) middlewareMetricsInc(next http.Handler) http.Handler {
@@ -48,21 +48,23 @@ func (cfg *apiConfig) resetCustomHandler(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	err = cfg.db.DeleteAllChirps(r.Context())
-	if err != nil {
-		w.Header().Add("Content-Type", "text/plain; charset=utf-8")
-		w.WriteHeader(500)
-		w.Write([]byte("db error"))
-		return
-	}
+	// NOT NEEDED - DeleteAllUsers(...) already delete all related rows in other tables with "ON DELETE CASCADE" setting
 
-	err = cfg.db.DeleteAllRefreshTokens(r.Context())
-	if err != nil {
-		w.Header().Add("Content-Type", "text/plain; charset=utf-8")
-		w.WriteHeader(500)
-		w.Write([]byte("db error"))
-		return
-	}
+	// err = cfg.db.DeleteAllChirps(r.Context())
+	// if err != nil {
+	// 	w.Header().Add("Content-Type", "text/plain; charset=utf-8")
+	// 	w.WriteHeader(500)
+	// 	w.Write([]byte("db error"))
+	// 	return
+	// }
+
+	// err = cfg.db.DeleteAllRefreshTokens(r.Context())
+	// if err != nil {
+	// 	w.Header().Add("Content-Type", "text/plain; charset=utf-8")
+	// 	w.WriteHeader(500)
+	// 	w.Write([]byte("db error"))
+	// 	return
+	// }
 
 	cfg.fileserverHits.Store(0)
 	w.Header().Add("Content-Type", "text/plain; charset=utf-8")

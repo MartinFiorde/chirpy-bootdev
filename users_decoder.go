@@ -12,21 +12,21 @@ import (
 )
 
 type UsersParameters struct {
-	Email    string `json:"email"`
-	Password string `json:"password"`
-	ExpiresInSeconds int `json:"expires_in_seconds"`
+	Email            string `json:"email"`
+	Password         string `json:"password"`
+	ExpiresInSeconds int    `json:"expires_in_seconds"`
 }
 
 type User struct {
-	ID        uuid.UUID `json:"id"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
-	Email     string    `json:"email"`
-	Token     string    `json:"token"`
-	RefreshToken     string    `json:"refresh_token"`
+	ID           uuid.UUID `json:"id"`
+	CreatedAt    time.Time `json:"created_at"`
+	UpdatedAt    time.Time `json:"updated_at"`
+	Email        string    `json:"email"`
+	Token        string    `json:"token,omitempty"`
+	RefreshToken string    `json:"refresh_token,omitempty"`
 }
 
-func postUsersHandler(cfg *apiConfig, w http.ResponseWriter, r *http.Request) {
+func postCreateUserHandler(cfg *apiConfig, w http.ResponseWriter, r *http.Request) {
 	params, err := UsersdecodeRequestBody(r)
 	if err != nil {
 		respondJSON(w, http.StatusInternalServerError, Response{Error: "Something went wrong"})
@@ -109,7 +109,7 @@ func postLogin(cfg *apiConfig, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	jwt, err := auth.MakeJWT(dbUser.ID, cfg.secret, time.Duration(params.ExpiresInSeconds) * time.Second) 
+	jwt, err := auth.MakeJWT(dbUser.ID, cfg.secret, time.Duration(params.ExpiresInSeconds)*time.Second)
 	if err != nil {
 		respondJSON(w, http.StatusUnauthorized, Response{Error: "Something went wrong <jwt error>"})
 		return
@@ -121,22 +121,22 @@ func postLogin(cfg *apiConfig, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	refreshTokenDB, err := cfg.db.CreateRefreshToken(r.Context(), 
-	database.CreateRefreshTokenParams{
-		Token: refreshToken,
-		UserID: dbUser.ID,
-	})
+	refreshTokenDB, err := cfg.db.CreateRefreshToken(r.Context(),
+		database.CreateRefreshTokenParams{
+			Token:  refreshToken,
+			UserID: dbUser.ID,
+		})
 	if err != nil {
 		respondJSON(w, http.StatusInternalServerError, Response{Error: "Something went wrong<fail to save refresh token in db>"})
 		return
 	}
 
 	user := User{
-		ID:        dbUser.ID,
-		CreatedAt: dbUser.CreatedAt,
-		UpdatedAt: dbUser.UpdatedAt,
-		Email:     dbUser.Email,
-		Token:     jwt,
+		ID:           dbUser.ID,
+		CreatedAt:    dbUser.CreatedAt,
+		UpdatedAt:    dbUser.UpdatedAt,
+		Email:        dbUser.Email,
+		Token:        jwt,
 		RefreshToken: refreshTokenDB.Token,
 	}
 
@@ -151,8 +151,8 @@ func postRefresh(cfg *apiConfig, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	tokenDB, err:= cfg.db.GetRefreshTokenByToken(r.Context(), userBearerToken)
-	if err != nil || tokenDB.RevokedAt.Valid || tokenDB.ExpiresAt.Before(time.Now()){
+	tokenDB, err := cfg.db.GetRefreshTokenByToken(r.Context(), userBearerToken)
+	if err != nil || tokenDB.RevokedAt.Valid || tokenDB.ExpiresAt.Before(time.Now()) {
 		respondJSON(w, http.StatusUnauthorized, Response{Error: "invalid refresh token"})
 		return
 	}
@@ -175,7 +175,7 @@ func postRevoke(cfg *apiConfig, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	tokenDB, err:= cfg.db.GetRefreshTokenByToken(r.Context(), userBearerToken)
+	tokenDB, err := cfg.db.GetRefreshTokenByToken(r.Context(), userBearerToken)
 	if err != nil {
 		respondJSON(w, http.StatusUnauthorized, Response{Error: "invalid refresh token"})
 		return
@@ -190,4 +190,55 @@ func postRevoke(cfg *apiConfig, w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(http.StatusNoContent)
+}
+
+func putChangePassword(cfg *apiConfig, w http.ResponseWriter, r *http.Request) {
+	userBearerToken, err := auth.GetBearerToken(r.Header)
+	if err != nil {
+		log.Printf("Error: %v", err)
+		respondJSON(w, http.StatusUnauthorized, Response{Error: "Something went wrong 4"})
+		return
+	}
+
+	userID, err := auth.ValidateJWT(userBearerToken, cfg.secret)
+	if err != nil {
+		log.Printf("Error: %v", err)
+		respondJSON(w, http.StatusUnauthorized, Response{Error: "Something went wrong 2"})
+		return
+	}
+
+	params, err := UsersdecodeRequestBody(r)
+	if err != nil {
+		respondJSON(w, http.StatusInternalServerError, Response{Error: "Something went wrong"})
+		return
+	}
+
+	hashPass, err := auth.HashPassword(params.Password)
+	if err != nil {
+		respondJSON(w, http.StatusInternalServerError, Response{Error: "Something went wrong"})
+		return
+	}
+
+	dbParams := database.UpdateUserParams{
+		ID:             userID,
+		Email:          params.Email,
+		HashedPassword: hashPass,
+	}
+
+	dbUser, err := cfg.db.UpdateUser(r.Context(), dbParams)
+	if err != nil {
+		log.Printf("Error creating user: %s", err)
+		respondJSON(w, http.StatusInternalServerError, Response{Error: "Database error"})
+		return
+	}
+
+	user := User{
+		ID:        dbUser.ID,
+		CreatedAt: dbUser.CreatedAt,
+		UpdatedAt: dbUser.UpdatedAt,
+		Email:     dbUser.Email,
+	}
+
+	UsersrespondJSON(w, http.StatusOK, user)
+
 }

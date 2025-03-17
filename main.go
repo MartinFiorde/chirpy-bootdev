@@ -42,7 +42,7 @@ func main() {
 	}
 
 	apiCfg := apiConfig{
-		db: dbQueries,
+		db:     dbQueries,
 		secret: secret,
 	}
 
@@ -62,7 +62,7 @@ func main() {
 
 	// CustomHandler to save users
 	sv.HandleFunc("POST /api/users", func(w http.ResponseWriter, r *http.Request) {
-		postUsersHandler(&apiCfg, w, r)
+		postCreateUserHandler(&apiCfg, w, r)
 	})
 
 	// CustomHandler to save chirps
@@ -85,14 +85,19 @@ func main() {
 		postLogin(&apiCfg, w, r)
 	})
 
-	// CustomHandler to login
+	// CustomHandler to generate jwt (short term) from refresh token (long term)
 	sv.HandleFunc("POST /api/refresh", func(w http.ResponseWriter, r *http.Request) {
 		postRefresh(&apiCfg, w, r)
 	})
 
-	// CustomHandler to login
+	// CustomHandler to revoke refresh token
 	sv.HandleFunc("POST /api/revoke", func(w http.ResponseWriter, r *http.Request) {
 		postRevoke(&apiCfg, w, r)
+	})
+
+	// CustomHandler to change email and password
+	sv.HandleFunc("PUT /api/users", func(w http.ResponseWriter, r *http.Request) {
+		putChangePassword(&apiCfg, w, r)
 	})
 
 	svStruct.ListenAndServe()
